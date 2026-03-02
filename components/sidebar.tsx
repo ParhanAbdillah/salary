@@ -42,11 +42,11 @@ export default function Navigation() {
       href: '/dashboard',
       icon: <Database size={20} />,
       subMenu: [
-        { name: 'Divisi', href: '/dashboard/divisi', icon: <Building2 size={18} /> },
-        { name: 'Jabatan', href: '/dashboard/jabatan', icon: <Briefcase size={18} /> },
-        { name: 'Karyawan', href: '/dashboard/karyawan', icon: <Users size={18} /> },
-        { name: 'User', href: '/dashboard/user', icon: <UserSquare2 size={18} /> },
-        { name: 'Konfigurasi', href: '/dashboard/konfigurasi', icon: <Settings size={18} /> }
+        { name: 'Divisi', href: '/divisi', icon: <Building2 size={18} /> },
+        { name: 'Jabatan', href: '/jabatan', icon: <Briefcase size={18} /> },
+        { name: 'Karyawan', href: '/karyawan', icon: <Users size={18} /> },
+        { name: 'User', href: '/user', icon: <UserSquare2 size={18} /> },
+        { name: 'Konfigurasi', href: '/konfigurasi', icon: <Settings size={18} /> }
       ]
     },
     {
@@ -67,7 +67,7 @@ export default function Navigation() {
   ];
 
   return (
-    <aside className="w-64 bg-slate-800 min-h-screen text-white flex flex-col">
+    <aside className="w-64 bg-slate-800 min-h-screen text-white flex flex-col fixed">
       {/* Logo */}
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-3">
@@ -146,24 +146,8 @@ export default function Navigation() {
               </Link>
             )}
           </div>
-        ))}
+        ))} 
       </nav>
-
-      {/* User Profile */}
-      <div className="p-4 border-t border-slate-700">
-        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-slate-700/50">
-          <div className="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center">
-            <span className="font-semibold">AD</span>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium">Admin</p>
-            <p className="text-xs text-slate-400">admin@salaryapp.com</p>
-          </div>
-          <button className="text-slate-400 hover:text-white">
-            <LogOut size={18} />
-          </button>
-        </div>
-      </div>
     </aside>
   );
 }
