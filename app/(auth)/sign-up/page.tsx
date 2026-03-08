@@ -1,129 +1,256 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function SignUpPage() {
+export default function SignUp() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
 
     try {
-      // Menggunakan URL API kampus yang sudah Anda tes di Thunder Client
-      const res = await fetch("/api/proxy-register", {
-        method: "POST",
+      // Tentukan role berdasarkan email
+      const userRole = formData.email.toLowerCase() === 'parhan@gmail.com' 
+        ? 'admin' 
+        : 'employee';
+
+      // 🔥 API Register Call (HAPUS SPASI DI URL!)
+      const response = await fetch('https://Payroll.Politekniklp3i-tasikmalaya.ac.id/register', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
-          name: name,
-          email: email,
-          password: password,
-          role: "admin", // Menambahkan role sesuai format di Thunder Client
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: userRole,
         }),
       });
 
-      // Cek jika response bukan JSON (mencegah error 'Unexpected token <')
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Server tidak memberikan respon JSON. Pastikan API aktif.");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Registrasi gagal');
       }
 
-      const data = await res.json();
+      // 🔥 Auto Login setelah register berhasil
+      const loginResponse = await fetch('https://Payroll.Politekniklp3i-tasikmalaya.ac.id/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-      if (!res.ok) {
-        throw new Error(data.message || "Registrasi gagal");
+      const loginData = await loginResponse.json();
+
+      if (loginResponse.ok) {
+        // Simpan token & user data
+        if (loginData.token) {
+          localStorage.setItem('token', loginData.token);
+        }
+        if (loginData.user) {
+          localStorage.setItem('user', JSON.stringify(loginData.user));
+        }
+
+        setSuccess('Registrasi berhasil! Mengalihkan...');
+        
+        // Redirect berdasarkan role
+        setTimeout(() => {
+          if (userRole === 'admin') {
+            router.push('/admin/dashboard');
+          } else {
+            router.push('/employee'); // ✅ Employee langsung ke dashboard employee
+          }
+        }, 1000);
+      } else {
+        // Jika auto login gagal, redirect ke login page
+        setSuccess('Registrasi berhasil! Silakan login.');
+        setTimeout(() => {
+          router.push('/sign-in?registered=true');
+        }, 1500);
       }
-
-      alert("Registrasi berhasil! Silakan login.");
-      router.push("/sign-in"); // Otomatis pindah ke login setelah sukses
+      
     } catch (err: any) {
-      // Menangani error 'Failed to fetch' atau error lainnya
-      setError(err.message === "Failed to fetch" 
-        ? "Gagal terhubung ke server API. Periksa koneksi internet atau masalah CORS." 
-        : err.message);
+      console.error('Register error:', err);
+      setError(err.message || 'Registrasi gagal. Silakan coba lagi.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-md p-8  mt-16">
-        <h1 className="text-center text-2xl font-bold mb-6">Sign Up</h1>
-        
-        <form onSubmit={handleSignUp} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1">
-            Full Name
-            <input
-              type="text"
-              placeholder="nama lengkap"
-              className="rounded-md border border-gray-400 px-4 py-2"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </label>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+      {/* Main Container */}
+      <div className="w-full max-w-md px-8">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <div className="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center shadow-lg">
+            <span className="text-white font-bold text-2xl">S</span>
+          </div>
+        </div>
 
-          <label className="flex flex-col gap-1">
-            Email
-            <input
-              type="email"
-              placeholder="admin@gmail.com"
-              className="rounded-md border border-gray-400 px-4 py-2"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
+        {/* Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Create Account
+          </h1>
+          <p className="text-gray-500 text-base">
+            Join SalaryApp to manage your payroll
+          </p>
+        </div>
 
-          <label className="flex flex-col gap-1">
-            Password
-            <input
-              type="password"
-              placeholder="******"
-              className="rounded-md border border-gray-400 px-4 py-2"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </label>
-
+        {/* Sign Up Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          {/* Error Message */}
           {error && (
-            <p className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
-              {error}
-            </p>
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-700 text-sm text-center">{error}</p>
+            </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-lg bg-black px-4 py-2 text-white font-bold disabled:opacity-50 mt-2"
-          >
-            {loading ? "Processing..." : "Sign Up"}
-          </button>
+          {/* Success Message */}
+          {success && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <p className="text-emerald-700 text-sm text-center">{success}</p>
+            </div>
+          )}
 
-          <p className="text-center text-sm mt-4">
-            Already have an account?{" "}
-            <button 
-              type="button" 
-              onClick={() => router.push("/sign-in")}
-              className="font-bold hover:underline"
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Full Name Input */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="User Name"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all placeholder:text-gray-400"
+                required
+              />
+            </div>
+
+            {/* Email Input */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Example@gmail.com"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all placeholder:text-gray-400"
+                required
+              />
+              {/* Hint untuk admin */}
+              {formData.email.toLowerCase() === 'parhan@gmail.com' && (
+                <p className="mt-1 text-xs text-blue-600 font-medium">
+                  ℹ️ Admin account akan dibuat
+                </p>
+              )}
+            </div>
+
+            {/* Password Input */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all placeholder:text-gray-400"
+                required
+                minLength={6}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Minimal 6 karakter
+              </p>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3.5 bg-blue-900 text-white font-semibold rounded-xl shadow-lg hover:bg-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
-              Sign In
+              {isLoading ? (
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+              ) : (
+                'Register'
+              )}
+            </button>
+          </form>
+
+          {/* Sign In Link */}
+          <p className="mt-6 text-center text-base text-gray-600">
+            Already have an account?{' '}
+            <button
+              onClick={() => router.push('/sign-in')}
+              className="font-semibold text-blue-900 hover:text-blue-800 transition-colors"
+            >
+              Sign in instead
             </button>
           </p>
-        </form>
+        </div>
+
+        {/* Demo Account Info
+        <div className="mt-6 bg-blue-50 rounded-xl p-6 border border-blue-100">
+          <p className="text-sm font-semibold text-blue-900 mb-3 text-center">
+            📋 Demo Accounts:
+          </p>
+          <div className="space-y-2 text-xs">
+            <div className="bg-white rounded-lg p-3 border border-blue-200">
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-medium text-blue-700">Admin:</span>
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold">ADMIN</span>
+              </div>
+              <p className="text-gray-600 font-mono">parhan@gmail.com</p>
+              <p className="text-gray-600 font-mono">parhan123</p>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-blue-200">
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-medium text-blue-700">Employee:</span>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">USER</span>
+              </div>
+              <p className="text-gray-600">Register dengan email lain</p>
+              <p className="text-gray-500 italic">Otomatis jadi employee</p>
+            </div>
+          </div>
+        </div> */}
       </div>
-    </main>
+    </div>
   );
 }

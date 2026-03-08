@@ -13,14 +13,15 @@ import { useState, useEffect } from 'react';
 
 interface NavbarProps {
   onMenuClick?: () => void;
+  role?: 'admin' | 'employee';
 }
 
-export default function Navbar({ onMenuClick }: NavbarProps) {
+export default function Navbar({ onMenuClick, role = 'admin' }: NavbarProps) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [userName, setUserName] = useState('User');
   const [userEmail, setUserEmail] = useState('user@mail.com');
-  const [userRole, setUserRole] = useState<'admin' | 'employee'>('employee');
+  const [userRole, setUserRole] = useState<'admin' | 'employee'>('admin');
 
   // 🔥 Ambil data user dari localStorage
   useEffect(() => {
@@ -33,7 +34,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         setUserEmail(parsedUser.email || 'user@mail.com');
         setUserRole(parsedUser.role || 'employee');
       } catch (error) {
-        console.error('Error parsing user data:', error);
+        console.error('Error parsing user ', error);
       }
     }
   }, []);

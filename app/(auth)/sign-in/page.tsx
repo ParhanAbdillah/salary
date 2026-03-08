@@ -1,88 +1,153 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SignIn() {
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setError('');
+    setIsLoading(true);
 
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      // 🔥 Gunakan proxy API Next.js
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email, 
+          password 
+        }),
       });
 
-      let data: any = null;
-      const contentType = res.headers.get("content-type");
+      const data = await response.json();
+      console.log('Login Response:', data);
 
-      if (contentType && contentType.includes("application/json")) {
-        data = await res.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Login gagal');
+      }
+
+      // Simpan token & user data
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+
+      // Redirect berdasarkan role
+      const userRole = data.user?.role;
+      
+      if (userRole === 'admin') {
+        router.push('/admin/dashboard');
       } else {
-        const text = await res.text();
-        throw new Error(text || "Response bukan JSON");
+        router.push('/employee');
       }
 
-      if (!res.ok) {
-        throw new Error(data?.message || `HTTP Error ${res.status}`);
-      }
-
-      localStorage.setItem("access_token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Login gagal");
+      console.error('Login error:', err);
+      setError(err.message || 'Email atau password salah');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-      <main className="w-full max-w-md rounded-2xl bg-white p-8 shadow dark:bg-zinc-900">
-        <h1 className="mb-6 text-center text-2xl font-semibold">Sign In</h1>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md px-8">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <div className="w-12 h-12 bg-blue-900 rounded-lg flex items-center justify-center shadow-lg">
+            <span className="text-white font-bold text-2xl">S</span>
+          </div>
+        </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="admin@mail.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2"
-            required
-          />
+        {/* Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome Back
+          </h1>
+          <p className="text-gray-500 text-base">
+            Sign in to access your payroll dashboard
+          </p>
+        </div>
 
-          <input
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2"
-            required
-          />
+        {/* Sign In Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-700 text-sm text-center font-medium">{error}</p>
+            </div>
+          )}
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Example@gmail.com"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all placeholder:text-gray-400"
+                required
+              />
+            </div>
 
-          <button
-            disabled={loading}
-            className="w-full rounded-lg bg-black py-2 text-white disabled:opacity-50"
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-      </main>
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all placeholder:text-gray-400"
+                required
+              />
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3.5 bg-blue-900 text-white font-semibold rounded-xl shadow-lg hover:bg-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            >
+              {isLoading ? (
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+          </form>
+
+          {/* Sign Up Link */}
+          <p className="mt-6 text-center text-base text-gray-600">
+            Don't have an account?{' '}
+            <button
+              onClick={() => router.push('/sign-up')}
+              className="font-semibold text-blue-900 hover:text-blue-800 transition-colors"
+            >
+              Register here
+            </button>
+          </p>
+        </div>
+
+        
+      </div>
     </div>
   );
 }

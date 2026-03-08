@@ -5,24 +5,19 @@ import Link from 'next/link';
 import { useState } from 'react';
 import {
   LayoutGrid,
-  Database,
-  Building2,
-  Briefcase,
-  Users,
-  UserSquare2,
-  Settings,
   CalendarCheck,
   CalendarDays,
   Wallet,
   ChevronDown,
   ChevronUp,
   LogOut,
-  FileText
+  FileText,
+  User
 } from 'lucide-react';
 
-export default function Navigation() {
+export default function EmployeeSidebar() {
   const pathname = usePathname();
-  const [openMenu, setOpenMenu] = useState<string | null>('Master');
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const toggleMenu = (menuName: string) => {
     setOpenMenu(openMenu === menuName ? null : menuName);
@@ -35,45 +30,36 @@ export default function Navigation() {
   const menuItems = [
     {
       name: 'Dashboard',
-      href: '/admin/dashboard',
+      href: '/employee',
       icon: <LayoutGrid size={20} />
     },
     {
-      name: 'Master',
-      href: '/admin/master',
-      icon: <Database size={20} />,
-      subMenu: [
-        { name: 'Divisi', href: '/admin/divisi', icon: <Building2 size={18} /> },
-        { name: 'Jabatan', href: '/admin/jabatan', icon: <Briefcase size={18} /> },
-        { name: 'Karyawan', href: '/admin/karyawan', icon: <Users size={18} /> },
-        { name: 'User', href: '/admin/user', icon: <UserSquare2 size={18} /> },
-        { name: 'Konfigurasi', href: '/admin/konfigurasi', icon: <Settings size={18} /> }
-      ]
-    },
-    {
       name: 'Presensi',
-      href: '/presensi',
+      href: '/employee/presensi',
       icon: <CalendarCheck size={20} />,
       subMenu: [
-        { name: 'Report Presensi', href: '/admin/presensi/report', icon: <FileText size={18} /> }
+        { name: 'Kehadiran', href: '/employee/presensi/kehadiran' },
+        
       ]
     },
     {
       name: 'Cuti',
-      href: '/cuti',
+      href: '/employee/cuti',
       icon: <CalendarDays size={20} />,
       subMenu: [
-        { name: 'Report Cuti', href: '/admin/cuti/report', icon: <FileText size={18} /> }
+        { name: 'Form Pengajuan', href: '/employee/cuti/ajukan' },
+        { name: 'Riwayat & Saldo Cuti', href: '/employee/cuti/riwayat' }
       ]
     },
     {
       name: 'Gaji',
-      href: '/gaji',
+      href: '/employee/gaji',
       icon: <Wallet size={20} />,
       subMenu: [
-        { name: 'Report Gaji', href: '/admin/gaji/report', icon: <FileText size={18} /> }
+        { name: 'Slip Gaji', href: '/employee/gaji/slip' }
       ]
-    }
+    },
+    
   ];
 
   return (
@@ -84,15 +70,25 @@ export default function Navigation() {
           <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-xl">S</span>
           </div>
-          <h1 className="text-2xl font-bold">
-            <span className="text-white">Salary</span>
-            <span className="text-teal-400">App</span>
-          </h1>
+          <div>
+            <h1 className="text-xl font-bold">
+              <span className="text-white">Salary</span>
+              <span className="text-teal-400">App</span>
+            </h1>
+            <p className="text-xs text-slate-400">Employee Portal</p>
+          </div>
         </div>
       </div>
 
+      {/* Main Menu Label */}
+      <div className="px-4 py-3 mt-2">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          Main Menu
+        </p>
+      </div>
+
       {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => (
           <div key={item.name}>
             {item.subMenu ? (
@@ -131,9 +127,6 @@ export default function Navigation() {
                             : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
                         }`}
                       >
-                        <span>
-                          {subItem.icon}
-                        </span>
                         <span className="text-sm">{subItem.name}</span>
                       </Link>
                     ))}
@@ -156,10 +149,11 @@ export default function Navigation() {
               </Link>
             )}
           </div>
-        ))} 
+        ))}
       </nav>
 
-      
+      {/* Logout Button */}
+    
     </aside>
   );
 }
