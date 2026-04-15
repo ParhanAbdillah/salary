@@ -31,9 +31,9 @@ export default function SignIn() {
       const data = await response.json();
       console.log('Login Response:', data);
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Login gagal');
-      }
+      // if (!response.ok) {
+      //   throw new Error(data.message || 'Login gagal');
+      // }
 
       // Simpan token & user data
       if (data.token) {

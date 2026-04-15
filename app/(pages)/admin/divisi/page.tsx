@@ -1,33 +1,149 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Edit, List, Save, X, Building, Building2 } from "lucide-react";
+import { log } from "node:console";
+
+
+interface Divisi {
+  id: number;
+  divisi: string;
+}
+
 
 export default function DivisiPage() {
-  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [namaDivisi, setNamaDivisi] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const token = localStorage.getItem("token");
+  const [divisiList, setDivisiList] = useState<Divisi[]>([]);
 
-  // Data dummy untuk contoh view
-  const [dataDivisi, setDataDivisi] = useState([
-    { id: 1, nama: "Teknologi Informasi" },
-    { id: 2, nama: "Sumber Daya Manusia" },
-    { id: 3, nama: "Keuangan" },
-  ]);
-
-  const handleTambahData = (e: React.FormEvent) => {
+   // SIMPAN DATA / UPDATE DIVISI
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!namaDivisi) return;
+    setLoading(true);
+    setError("");
 
-    const newData = {
-      id: dataDivisi.length + 1,
-      nama: namaDivisi,
-    };
+    const url = editingId
+      ? `https://payroll.politekniklp3i-tasikmalaya.ac.id/api/divisi/${editingId}`
+      : "https://payroll.politekniklp3i-tasikmalaya.ac.id/api/divisi";
+    
+    const method = editingId ? "PATCH" : "POST";
 
-    setDataDivisi([...dataDivisi, newData]);
-    setNamaDivisi("");
-    setShowForm(false);
-    alert("Data berhasil ditambahkan!");
+    try {
+      const res = await fetch(url, {
+        method: method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          nama_divisi: namaDivisi,
+          divisi: namaDivisi,
+        }),
+      });
+
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(`Server returned non-JSON response (${res.status}). Check console for details.`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || `Gagal ${editingId ? 'mengupdate' : 'menambahkan'} divisi`);
+      }
+
+      setNamaDivisi("");
+      setEditingId(null);
+      fetchDivisi(); 
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      }
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const fetchDivisi = async () => {
+    try {
+      const res = await fetch(
+        "https://payroll.politekniklp3i-tasikmalaya.ac.id/api/divisi",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await res.json();
+      console.log('Divisi:', data);
+          
+
+      if (!res.ok) {
+        throw new Error(data.message || "Gagal mengambil data");
+      }
+
+      setDivisiList(data.data || data);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      }
+    }
+  };
+
+  //EDIT DEVISI
+    const handleEdit = (divisi: Divisi) => {
+    setEditingId(divisi.id);
+    setNamaDivisi(divisi.divisi);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  //DELETE DIVISI
+  const handleDelete = async (id: number) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus divisi ini?")) return;
+
+    try {
+      const res = await fetch(
+        `https://payroll.politekniklp3i-tasikmalaya.ac.id/api/divisi/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Gagal menghapus divisi");
+      }
+
+      fetchDivisi();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setNamaDivisi("");
+  };
+
+  useEffect(() => {
+  fetchDivisi();
+}, []);
 
   return (
     <div className="space-y-6">
@@ -56,7 +172,7 @@ export default function DivisiPage() {
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
               <Building2 className="text-teal-500" size={20} /> Tambah Divisi Baru
             </h2>
-            <form onSubmit={handleTambahData} className="flex flex-col md:flex-row gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4">
               <input
                 type="text"
                 placeholder="Masukkan nama divisi (contoh: Pemasaran)"
@@ -90,29 +206,34 @@ export default function DivisiPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-gray-700">
-              {dataDivisi.map((item, index) => (
-                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">{index + 1}</td>
-                  <td className="px-6 py-4 font-medium">{item.nama}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex justify-end gap-2">
-                      <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+              {divisiList.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-6 py-10 text-center text-gray-400">
+                    No department found.
+                  </td>
+                </tr>
+              ) : (
+                divisiList.map((data, index) => (
+                  <tr key={data.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">{index + 1}</td>
+                    <td className="px-6 py-4 font-medium">{data.divisi}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end gap-2">
+                      <button 
+                      onClick={()=>handleEdit(data)}
+                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
                         <Edit size={18} />
                       </button>
-                      <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                      <button 
+                      onClick={() => handleDelete(data.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 size={18} />
                       </button>
                     </div>
                   </td>
                 </tr>
-              ))}
-              {dataDivisi.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="px-6 py-10 text-center text-gray-400">
-                    Belum ada data divisi.
-                  </td>
-                </tr>
-              )}
+              ))
+            )}
             </tbody>
           </table>
         </div>

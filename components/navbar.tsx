@@ -116,7 +116,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-linear-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-bold">
                 {userName?.charAt(0).toUpperCase() || 'U'}
               </span>
